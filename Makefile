@@ -1,9 +1,18 @@
+RSYNC_OPT = -rluczhv --progress --delete --exclude-from=exclude -e "ssh -p ${SSH_PORT}" ./dist/ ${SSH_USER}@${SSH_HOST}:/var/www/html/
 
 all: build ## build
 
 .PHONY: build
 build: ## build
 	npm run build
+
+.PHONY: dry-run
+dry-run: ## deploy dry-run
+	rsync --dry-run ${RSYNC_OPT}
+
+.PHONY: deploy
+deploy: ## deploy
+	rsync ${RSYNC_OPT}
 
 .PHONY: dev
 dev: ## Launch a development server
