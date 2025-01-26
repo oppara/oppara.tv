@@ -6,7 +6,7 @@
   "license": "",
   "author": "",
   "scripts": {
-    "build": "npm run clean && npx parcel build index.html --no-source-maps",
+    "build": "npm run clean && npx parcel build --no-source-maps index.html",
     "dev": "parcel index.html --open",
     "start": "npm run dev",
     "clean": "rm -rf ./dist/*",
