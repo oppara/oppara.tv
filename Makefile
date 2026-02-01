@@ -1,3 +1,5 @@
+include .env
+
 RSYNC_OPT = -rluczhv --progress --delete --exclude-from=exclude -e "ssh -p ${SSH_PORT}" ./dist/ ${SSH_USER}@${SSH_HOST}:/var/www/html/
 
 all: build ## build
