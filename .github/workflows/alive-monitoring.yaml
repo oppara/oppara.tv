@@ -1,0 +1,66 @@
+name: alive monitoring
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  alive_monitoring:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    env:
+      TARGET_URL: ${{ secrets.TARGET_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        id: setup-go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+
+      - name: Cache Go (bin included)
+        id: cache-go
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/bin
+          key: ${{ runner.os }}-go-bin-${{ steps.setup-go.outputs.go-version }}
+
+      - name: Install tools (if cache miss)
+        if: steps.cache-go.outputs.cache-hit != 'true'
+        run: |
+          go install github.com/yusukebe/rj/cmd/rj@latest
+          go install github.com/yusukebe/t/cmd/t@latest
+
+      - name: Add Go bin to PATH
+        run: echo "$HOME/go/bin" >> $GITHUB_PATH
+
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Run monitoring
+        run: |
+          rj ${TARGET_URL} | jq '.code' | t 200
+
+      - name: Send mail on failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_HOST }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USER }}
+          password: ${{ secrets.SMTP_PASS }}
+          subject: "[ALERT] Alive monitoring failed"
+          to: ${{ secrets.ALERT_EMAIL_TO }}
+          from: ${{ secrets.ALERT_EMAIL_FROM }}
+          body: |-
+            Alive monitoring failed.
+
+            URL: ${{ env.TARGET_URL }}
+            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
