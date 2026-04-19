@@ -45,6 +45,7 @@ jobs:
       - name: Run monitoring
         run: |
           rj ${TARGET_URL} | jq '.code' | t 200
+          exit 1
 
       - name: Send mail on failure
         if: failure()
